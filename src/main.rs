@@ -26,13 +26,16 @@ struct Args {
     /// The path to write the generated glue code to
     #[arg(short = 'o', long = "output")]
     output: PathBuf,
+    /// Generate a .d.ts file
+    #[arg(short = 't', long = "typings")]
+    generate_typings: bool,
     /// The path to the WebAssembly file to find imports for
     #[arg(value_name = "PATH")]
     wasm: PathBuf,
 }
 
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let mut args = Args::parse();
 
     let mut definitions: HashMap<String, String> = HashMap::new();
     for def in args.definitions {
@@ -56,7 +59,7 @@ fn main() -> Result<()> {
         ..Default::default()
     };
 
-    let mut output_writer = File::create(args.output)?;
+    let mut output_writer = File::create(&args.output)?;
     for library in libraries {
         library.write_to_output(
             &mut output_writer,
@@ -94,6 +97,29 @@ fn main() -> Result<()> {
 	return new WebAssembly.Instance(source instanceof WebAssembly.Module ? source : new WebAssembly.Module(source), imports);
 }}"#,
         imports.to_string(),
+    )?;
+
+    if !args.generate_typings {
+        return Ok(());
+    }
+
+    let exports = wasm_module
+        .exports
+        .into_iter()
+        .map(|x| format!("{}: {}", x.name, x.ty.as_typescript()))
+        .collect::<Vec<String>>()
+        .join(",");
+
+    args.output.set_extension("d.ts");
+    let mut typings_output_writer = File::create(args.output)?;
+
+    writeln!(
+        &mut typings_output_writer,
+        r#"type Exports = {{{exports}}};
+type WasmSource = Response | ArrayBuffer | ArrayBufferView | WebAssembly.Module;
+type WasmImport = Function | WebAssembly.Global | WebAssembly.Memory | WebAssembly.Table | number;
+export function instantiate(source: WasmSource | Promise<WasmSource>, missingImports?: Record<string, WasmImport>): Promise<Omit<WebAssembly.Instance, "exports"> & {{ exports: Exports }}>;
+"#
     )?;
 
     Ok(())

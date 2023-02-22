@@ -106,7 +106,7 @@ impl Module {
                     ExternalKind::Table => ModuleType::Table,
                     ExternalKind::Memory => ModuleType::Memory,
                     ExternalKind::Function => {
-                        if let Some(fn_type) = types.get((export.index - 1) as usize) {
+                        if let Some(fn_type) = types.get((export.index) as usize) {
                             fn_type.clone()
                         } else {
                             ModuleType::Unknown
@@ -123,27 +123,27 @@ impl Module {
 }
 
 impl ModuleType {
-    // pub fn as_typescript(&self) -> String {
-    //     use ModuleType::*;
-    //     match self {
-    //         Memory => "WebAssembly.Memory".to_owned(),
-    //         Table => "WebAssembly.Table".to_owned(),
-    //         I32 | F32 | I64 | F64 | V128 => "number".to_owned(),
-    //         Void => "void".to_owned(),
-    //         Func(args, ret) => {
-    //             let mut arg_idx = 0;
-    //             let args_vec: Vec<String> = args
-    //                 .iter()
-    //                 .map(|x| {
-    //                     arg_idx += 1;
-    //                     format!("arg{}: {}", arg_idx, x.as_typescript())
-    //                 })
-    //                 .collect();
-    //             format!("({}) => {}", args_vec.join(", "), ret.as_typescript())
-    //         }
-    //         _ => "unknown".to_owned(),
-    //     }
-    // }
+    pub fn as_typescript(&self) -> String {
+        use ModuleType::*;
+        match self {
+            Memory => "WebAssembly.Memory".to_owned(),
+            Table => "WebAssembly.Table".to_owned(),
+            I32 | F32 | I64 | F64 | V128 => "number".to_owned(),
+            Void => "void".to_owned(),
+            Func(args, ret) => {
+                let mut arg_idx = 0;
+                let args_vec: Vec<String> = args
+                    .iter()
+                    .map(|x| {
+                        arg_idx += 1;
+                        format!("arg{}: {}", arg_idx, x.as_typescript())
+                    })
+                    .collect();
+                format!("({}) => {}", args_vec.join(", "), ret.as_typescript())
+            }
+            _ => "unknown".to_owned(),
+        }
+    }
 
     pub fn from_wp_type(ty: &Type) -> Self {
         match ty {
