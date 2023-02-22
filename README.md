@@ -26,10 +26,9 @@ Options:
 
 ## Defining a library
 ```ts
-@linkage({ namespace: "stdio" })
-function puts(stringPointer: Pointer) {
-	const string = derefSentielString(stringPointer, 0);
-	console.log(string);
+@linkage({ namespace: "env" })
+function sum(a, b) {
+	return a + b;
 }
 ```
 
